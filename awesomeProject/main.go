@@ -1,157 +1,113 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
-func isPalindrome(n int) bool {
-	original := n
-	reversed := 0
-
-	for n > 0 {
-
-		digit := n % 10
-		reversed = reversed*10 + digit
-		n = n / 10
-	}
-
-	return original == reversed
-
+type WalletInterface interface {
+	Deposit(amount float64) error
+	Withdraw(amount float64) error
+	Transfer(to WalletInterface, amount float64) error
+}
+type USDWallet struct {
+	Currency string
+	Balance  float64
+}
+type GelWallet struct {
+	Currency string
+	Balance  float64
+}
+type BTCWallet struct {
+	Currency string
+	Balance  float64
 }
 
-func reverseInteger(n int) int {
-
-	znak := 1
-	if n < 0 {
-		znak = -1
-		n = -n
-	} else if n == 0 {
-		return 0
+func (u *USDWallet) Deposit(amount float64) error {
+	if amount <= 0 {
+		return errors.New("amount must be greater than zero")
 	}
-
-	reversedint := 0
-	for n > 0 {
-
-		digit := n % 10
-		reversedint = reversedint*10 + digit
-		n = n / 10
-	}
-
-	return reversedint * znak
-
+	u.Balance += amount
+	return nil
 }
 
-func canHold(width1 int, length1 int, width2 int, length2 int) bool {
-	rectangle1 := width1 * length1
-	rectangle2 := width2 * length2
-	if rectangle1 > rectangle2 {
-		return true
+func (u *USDWallet) Withdraw(amount float64) error {
+	if amount > u.Balance {
+		return error(errors.New("amount must be less than balance"))
 	}
+	if amount < 0 {
+		return fmt.Errorf("amount must be greater to zero")
+	}
+	u.Balance -= amount
+	return nil
+}
+func (u *USDWallet) Transfer(to *GelWallet, amount float64) error {
+	if amount > u.Balance {
+		return errors.New("no balance to transfer")
+	} else if amount <= 0 {
+		return errors.New("amount must be greater than zero")
+	}
+	if u.Currency != to.Currency {
+		return errors.New("currency not supported")
+	}
+	u.Balance -= amount
+	to.Balance += amount
 
-	return false
-
+	return nil
 }
 
-func guessNumber(n int) string {
-	switch n {
-	case 0:
-		return "zero"
-	case 1:
-		return "one"
-	case 2:
-		return "two"
-	case 3:
-		return "three"
-	case 4:
-		return "four"
-	case 5:
-		return "five"
-	case 6:
-		return "six"
-	case 7:
-		return "seven"
-	case 8:
-		return "eight"
-	case 9:
-		return "nine"
-	case 10:
-		return "ten"
-	default:
-		return "eto drugoe"
-
+func (u *USDWallet) Transfer2(to *BTCWallet, amount float64) error {
+	if amount > u.Balance {
+		return errors.New("no balance to transfer")
+	} else if amount <= 0 {
+		return errors.New("amount must be greater than zero")
 	}
-}
-
-func pow(n int, pow int) int {
-
-	if pow == 0 {
-		return 1
+	if u.Currency != to.Currency {
+		return errors.New("currency not supported")
 	}
-	if pow < 0 {
-		return 0
-	}
+	u.Balance -= amount
+	to.Balance += amount
 
-	res := 1
-	for i := 0; i < pow; i++ {
-		res = res * n
-
-	}
-
-	return res
-
-}
-
-func fibonacci(n int) int {
-
-	if n == 1 {
-		return 0
-	} else if n == 2 {
-		return 1
-	}
-
-	f1 := 0
-	f2 := 1
-	for i := 2; i < n; i++ {
-
-		f1, f2 = f2, f1+f2
-	}
-
-	return f2
-
-}
-
-func fibonaccirec(n int) int {
-
-	if n == 1 {
-		return 0
-	} else if n == 2 {
-		return 1
-	}
-
-	return fibonaccirec(n-1) + fibonaccirec(n-2)
-
-}
-func array2d(arr [2][3]int) {
-
-	for i := 0; i < len(arr); i++ {
-		for j := 0; j < len(arr[i]); j++ {
-			fmt.Printf("%d ", arr[i][j])
-		}
-		fmt.Println()
-	}
+	return nil
 }
 
 func main() {
+	u := &USDWallet{
+		Currency: "USD",
+		Balance:  100,
+	}
+	err := u.Deposit(500)
+	if err != nil {
+		fmt.Println("Deposir failed:", err)
+	}
+	fmt.Println(*u)
 
-	fmt.Println("Palindrome:", isPalindrome(454))
-	fmt.Println("Reversint:", reverseInteger(1534236469))
-	fmt.Println("Canhold:", canHold(10, 20, 10, 20))
-	fmt.Println("guessNumber:", guessNumber(9))
-	fmt.Println("stepen:", pow(2, 4))
-	fmt.Println("fibonacci:", fibonacci(10))
-	fmt.Println("fibonaccirec:", fibonaccirec(10))
+	errWithd := u.Withdraw(300)
+	if errWithd != nil {
+		fmt.Println("Withdraw failed:", errWithd)
+	}
+	fmt.Println(*u)
 
-	arr := [2][3]int{{1, 2, 3}, {4, 5, 6}}
+	g := &GelWallet{
+		Currency: "GEL",
+		Balance:  200,
+	}
+	errTrans := u.Transfer(g, 200)
+	if errTrans != nil {
+		fmt.Println("Transfer failed:", errTrans)
+	}
 
-	array2d(arr)
+	fmt.Println(*g)
+
+	b := &BTCWallet{
+		Currency: "USD",
+		Balance:  300,
+	}
+	fmt.Println("BTC balance", *b)
+
+	errTrans2 := u.Transfer2(b, 100)
+	if errTrans2 != nil {
+		fmt.Println("Transfer2 failed:", errTrans2)
+	}
+	fmt.Println("BTC balance", *b)
 }
-
-//fdsdf
