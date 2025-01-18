@@ -1,30 +1,83 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
-type Node struct {
-	N    int
-	Next *Node
-}
-type DNode struct {
-	N    int
-	Next *DNode
-	Prev *DNode
-}
+//type Node struct {
+//	N    int
+//	Next *Node
 
-func findMiddle(head *Node) int {
-	slow := head
-	fast := head.Next
-	for fast != nil && fast.Next != nil {
+//type DNode struct {
+//	N    int
+//	Next *DNode
+//	Prev *DNode
+//}
 
-	}
-	return
+//type Queue struct {
+//	s []any
+//}
+//
+//func (q *Queue) Push(v any) {
+//	q.s = append(q.s, v)
+//}
+//
+//func (q *Queue) Pop() (any, bool) {
+//	if len(q.s) == 0 {
+//
+//		return nil, false
+//	}
+//	res := q.s[0]
+//
+//	q.s = q.s[1:]
+//
+//	return res, true
+//}
 
-	// finds n/2+1 value
+//func reverse(n *Node)*Node{
+//	//has to reverse linked list
+//
+//	// 1->2->3
+//	//3->2->1
+//}
 
-}
+//type Node struct {
+//	N    int
+//	Next *Node
+//}
+
+//func makeCircle(head *Node) *Node {
+//		temp := head
+//	for head.Next!= nil{
+//		fmt.Println(head.N)
+//		head = head.Next
+//	}
+//		head.Next = temp
+//
+//		return temp
+//	// makes circle out of linked list
+//}
+
+//
+//func printLinkedListReversed(head *Node) {
+//	for head.Next != nil{
+//		fmt.Println(head.N)
+//		head = head.Next
+//	}
+//
+//
+//	//4->3->2->1
+//}
+
+//func findMiddle(head *Node) int {
+//	slow := head
+//	fast := head.Next
+//	for fast != nil && fast.Next != nil {
+//		slow = slow.Next
+//		fast = fast.Next.Next
+//	}
+//	return slow.N
+//}
+
+// finds n/2+1 value
 
 // 3->2->1 WITH LOOP
 //}
@@ -53,44 +106,63 @@ func findMiddle(head *Node) int {
 //}
 
 func main() {
-
-	//p := DNode{
-	//	N:    1,
-	//	Next: nil,
-	//	Prev: nil,
-	//}
-	//l := DNode{
-	//	N:    2,
-	//	Next: nil,
-	//	Prev: &p,
-	//}
-	//k := DNode{
-	//	N:    3,
-	//	Next: nil,
-	//	Prev: &l,
-	//}
-	//l.Next = &k
-	//p.Next = &l
-	//
-	//printDlinkedList(&p)
-
-	//
-	n := Node{
-		N: 1,
-		Next: &Node{
-			N: 2,
-			Next: &Node{
-				N: 3,
-				Next: &Node{
-					N:    4,
-					Next: nil,
-				},
-			},
-		},
-	}
-	findMiddle(&n)
-
+	s := `
+	This string is on
+	multiple lines
+	within three single
+	quotes on either side`
+	fmt.Println(s)
 }
+
+//	s := Queue{}
+//
+//	s.Push(1)
+//	s.Push(2)
+//	s.Push(3)
+//
+//	fmt.Println(s.Pop())
+//	fmt.Println(s.Pop())
+//	fmt.Println(s.Pop())
+//	fmt.Println(s.Pop())
+//}
+
+//p := DNode{
+//	N:    1,
+//	Next: nil,
+//	Prev: nil,
+//}
+//l := DNode{
+//	N:    2,
+//	Next: nil,
+//	Prev: &p,
+//}
+//k := DNode{
+//	N:    3,
+//	Next: nil,
+//	Prev: &l,
+//}
+//l.Next = &k
+//p.Next = &l
+//
+//printDlinkedList(&p)
+
+//
+//	n := Node{
+//		N: 1,
+//		Next: &Node{
+//			N: 2,
+//			Next: &Node{
+//				N: 3,
+//				Next: &Node{
+//					N:    4,
+//					Next: nil,
+//				},
+//			},
+//		},
+//	}
+//	fmt.Println(&n)
+//
+//}
 
 //
 ////import (
