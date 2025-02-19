@@ -6,25 +6,30 @@ import (
 	"context"
 	_ "errors"
 	_ "fmt"
+	"github.com/sirupsen/logrus"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 var _ OrderService = (*service)(nil)
+
+//go:generate mockery --name=OrderService --with-expecter --output=../mock --outpkg=mock --case=underscore
 
 type OrderService interface {
 	CreateOrder(ctx context.Context, req *entity.CreateOrderRequest) (*entity.Order, error)
 	UpdateOrderStatus(ctx context.Context, orderStatus entity.OrderStatus, orderID string) error
 	GetOrders(ctx context.Context, req *entity.GetOrders) ([]entity.Order, error)
+	EditOrder(ctx context.Context, req *entity.EditOrderRequest) (*entity.Order, error)
 }
 
-func NewOrderService(repo repository.DB) OrderService {
-	return &service{repo: repo}
+func NewOrderService(repo repository.DB, uuidFunc func() string, logger *logrus.Logger) OrderService {
+	return &service{repo: repo, uuidFunc: uuidFunc, logger: logger}
 }
 
 type service struct {
-	repo repository.DB
+	logger   *logrus.Logger
+	repo     repository.DB
+	uuidFunc func() string
+	//nowFunc  func() time.Time
 }
 
 func (s *service) CreateOrder(ctx context.Context, req *entity.CreateOrderRequest) (*entity.Order, error) {
@@ -39,14 +44,14 @@ func (s *service) CreateOrder(ctx context.Context, req *entity.CreateOrderReques
 		}
 	}
 
-	now := time.Now()
+	//now := s.nowFunc()
 
 	order := entity.Order{
-		ID:           uuid.New().String(),
+		ID:           s.uuidFunc(),
 		UserID:       req.UserID,
 		ProductIDs:   req.Products,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 		Price:        req.Price,
 		DeliveryType: req.DeliveryType,
 		Address:      req.AddressID,
@@ -64,47 +69,69 @@ func (s *service) CreateOrder(ctx context.Context, req *entity.CreateOrderReques
 func (s *service) UpdateOrderStatus(ctx context.Context, orderStatus entity.OrderStatus, orderID string) error {
 	order, err := s.repo.GetOrderByID(ctx, orderID)
 	if err != nil {
-
 		return err
 	}
 
 	if order.OrderStatus == entity.Created {
 		if orderStatus == entity.Paid {
 			order.OrderStatus = entity.Paid
+		} else if orderStatus == entity.Cancelled {
+			order.OrderStatus = entity.Cancelled
 		} else {
 			return entity.InvalidTransition
 		}
-	} else if order.OrderStatus == entity.Paid {
+	}
+
+	if order.OrderStatus == entity.Paid {
 		if orderStatus == entity.Collect {
 			order.OrderStatus = entity.Collect
+		} else if orderStatus == entity.Cancelled {
+			order.OrderStatus = entity.Cancelled
 		} else {
 			return entity.InvalidTransition
 		}
+
 	} else if order.OrderStatus == entity.Collect {
 		if orderStatus == entity.Collected {
 			order.OrderStatus = entity.Collected
-		} else {
-			return entity.InvalidTransition
+		} else if orderStatus == entity.Cancelled {
+			order.OrderStatus = entity.Cancelled
 		}
-	} else if order.OrderStatus == entity.Collected {
+	} else {
+		return entity.InvalidTransition
+	}
+
+	if order.OrderStatus == entity.Collected {
 		if orderStatus == entity.Delivery {
 			order.OrderStatus = entity.Delivery
-		} else {
-			return entity.InvalidTransition
+		} else if orderStatus == entity.Cancelled {
+			order.OrderStatus = entity.Cancelled
 		}
-	} else if order.OrderStatus == entity.Delivery {
+	} else {
+		return entity.InvalidTransition
+	}
+
+	if order.OrderStatus == entity.Delivery {
 		if orderStatus == entity.Done {
-			order.OrderStatus = entity.Done
+		} else if orderStatus == entity.Cancelled {
+			order.OrderStatus = entity.Cancelled
+		}
+		order.OrderStatus = entity.Done
+	} else {
+		return entity.InvalidTransition
+	}
+
+	if order.OrderStatus == entity.Delivery || order.OrderStatus == entity.Done {
+		if orderStatus == entity.Cancelled {
+			return entity.Pozdno
 		} else {
-			return entity.InvalidTransition
+			order.OrderStatus = entity.Cancelled
 		}
-		if order.OrderStatus == entity.Delivery || order.OrderStatus == entity.Done {
-			if orderStatus == entity.Cancelled {
-				return entity.PozdnoNahui
-			} else {
-				order.OrderStatus = entity.Cancelled
-			}
-		}
+	}
+
+	err = s.repo.UpdateOrder(ctx, order)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -117,4 +144,35 @@ func (s *service) GetOrders(ctx context.Context, req *entity.GetOrders) ([]entit
 	}
 
 	return orders, nil
+}
+
+func (s *service) EditOrder(ctx context.Context, req *entity.EditOrderRequest) (*entity.Order, error) {
+	order, err := s.repo.GetOrderByID(ctx, req.OrderID)
+	if err != nil {
+		return nil, err
+	}
+	// дописать and когда реквест на продукты
+	if order.OrderStatus == entity.Delivery || order.OrderStatus == entity.Done {
+		return nil, entity.OrderCannotBeEdited
+	}
+
+	// дописать and когда адрес именно меняться будет
+	if order.OrderStatus == entity.Done {
+		return nil, entity.AddressCannotBeEdited
+	}
+
+	if req.Address != "" {
+		order.Address = req.Address
+	}
+
+	if len(req.Products) > 0 {
+		order.ProductIDs = req.Products
+	}
+
+	err = s.repo.UpdateOrder(ctx, order)
+	if err != nil {
+		return nil, err
+	}
+
+	return order, err
 }
